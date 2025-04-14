@@ -41,17 +41,11 @@ fun LoginScreen(
     viewModel: LoginViewModel,
     onLoginSuccess: () -> Unit
 ) {
-    val loginFormState by viewModel.loginFormState.observeAsState()
-    val loginResult by viewModel.loginResult.observeAsState()
-
-    var username by rememberSaveable { mutableStateOf("") }
-    var password by rememberSaveable { mutableStateOf("") }
+    val uiState by viewModel.uiState.observeAsState(LoginUiState())
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
-    LaunchedEffect(loginResult?.success) {
-        if (loginResult?.success != null) {
-            onLoginSuccess()
-        }
+    LaunchedEffect(uiState.isSuccess) {
+        if (uiState.isSuccess) onLoginSuccess()
     }
 
     Column(
@@ -76,20 +70,17 @@ fun LoginScreen(
         )
 
         OutlinedTextField(
-            value = username,
-            onValueChange = {
-                username = it
-                viewModel.loginDataChanged(it, password)
-            },
+            value = uiState.username,
+            onValueChange = viewModel::onUsernameChanged,
             label = { Text(stringResource(R.string.login_username)) },
-            isError = loginFormState?.usernameError != null,
+            isError = uiState.usernameError != null,
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
 
-        if (loginFormState?.usernameError != null) {
+        if (uiState.usernameError == LoginError.EMPTY_USERNAME) {
             Text(
-                text = stringResource(id = loginFormState!!.usernameError!!),
+                text = stringResource(R.string.login_username_error),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.align(Alignment.Start)
@@ -99,39 +90,26 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
-            value = password,
-            onValueChange = {
-                password = it
-                viewModel.loginDataChanged(username, it)
-            },
+            value = uiState.password,
+            onValueChange = viewModel::onPasswordChanged,
             label = { Text(stringResource(R.string.login_password)) },
-            isError = loginFormState?.passwordError != null,
+            isError = uiState.passwordError != null,
             singleLine = true,
-            visualTransformation = if (passwordVisible)
-                VisualTransformation.None
-            else
-                PasswordVisualTransformation(),
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
-                val icon = if (passwordVisible)
-                    Icons.Default.VisibilityOff
-                else
-                    Icons.Default.Visibility
+                val icon = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                    Icon(imageVector = icon, contentDescription = null)
+                    Icon(icon, contentDescription = null)
                 }
             },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(
-                onDone = {
-                    viewModel.login(username, password)
-                }
-            ),
+            keyboardActions = KeyboardActions(onDone = { viewModel.login() }),
             modifier = Modifier.fillMaxWidth()
         )
 
-        if (loginFormState?.passwordError != null) {
+        if (uiState.passwordError == LoginError.EMPTY_PASSWORD) {
             Text(
-                text = stringResource(id = loginFormState!!.passwordError!!),
+                text = stringResource(R.string.login_password_error),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.align(Alignment.Start)
@@ -140,20 +118,24 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
+        val isFormValid = uiState.username.isNotBlank() &&
+                uiState.password.isNotBlank() &&
+                uiState.usernameError == null &&
+                uiState.passwordError == null &&
+                !uiState.isLoading
+
         Button(
-            onClick = {
-                viewModel.login(username, password)
-            },
-            enabled = loginFormState?.isDataValid == true,
+            onClick = viewModel::login,
+            enabled = isFormValid,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(text = stringResource(id = R.string.login_btn_sign_in))
+            Text(text = stringResource(R.string.login_btn_sign_in))
         }
 
-        if (loginResult?.error != null) {
+        if (uiState.error == LoginError.INVALID_CREDENTIALS) {
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = stringResource(loginResult!!.error!!),
+                text = stringResource(R.string.login_failed),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodyMedium
             )
