@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">Movie App</string>
+
+    <string name="login_username">Username</string>
+    <string name="login_password">Password</string>
+    <string name="login_btn_sign_in">Sign in</string>
+    <string name="login_username_error">Enter username</string>
+    <string name="login_password_error">Enter password</string>
+    <string name="login_failed">Login failed</string>
+    <string name="login_dialog">Login</string>
+
+    <string name="rating">0.0</string>
+
+    <string name="dialog_positive">Got it</string>
+
+    <string name="movie_screen_title">Películas</string>
+    <string name="favorite_screen_title">Favoritos</string>
+    <string name="you_dont_have_favorite_movies">No tienes películas favoritas</string>
+</resources>
